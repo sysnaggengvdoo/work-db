@@ -13,14 +13,14 @@
     <header class="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-md">
       <div class="flex justify-between items-center mb-2">
         <h1 class="text-xl font-bold">過去ログ検索 v3.3</h1>
-        <a href="https://sysnaggengvdoo.github.io/work-status/" class="text-sm bg-blue-800 px-3 py-1 rounded hover:bg-blue-900 transition">⬅️ 今日の作業へ</a>
+        <a href="https://sysnaggengvdoo.github.io/work-status/" class="text-sm bg-blue-800 px-3 py-1 rounded hover:bg-blue-900 transition">⬅️ 当日作業へ</a>
       </div>
       
       <div class="relative">
         <input 
           type="text" 
           v-model="searchQuery" 
-          placeholder="🔍 整理No、顧客名、担当で検索..." 
+          placeholder="🔍 整理No、顧客名、担当、日付で検索..." 
           class="w-full p-2 rounded text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
       </div>
@@ -48,26 +48,49 @@
       </div>
 
       <div v-else>
-        <p class="text-sm text-gray-500 mb-3 text-right">該当: {{ filteredLogs.length }} 件</p>
+        <p class="text-sm text-gray-500 mb-3 text-right">
+          該当: <span class="font-bold text-gray-800">{{ filteredGroupedLogs.length }}</span> 案件 
+          (計 {{ totalRecordsCount }} 件の履歴)
+        </p>
         
-        <div class="space-y-4">
-          <div v-for="(log, index) in filteredLogs" :key="index" class="bg-white border rounded-xl shadow-sm overflow-hidden">
-            <div class="bg-gray-800 text-white p-3 flex justify-between items-center">
-              <span class="font-bold text-lg">{{ log['整理№'] || log['整理No'] || log['整理No.'] || 'Noなし' }}</span>
-              <span class="bg-gray-600 px-2 py-1 rounded text-xs">{{ log['TS'] || log['タイムスタンプ'] || log['日付'] || '日付不明' }}</span>
+        <div class="space-y-6">
+          <div v-for="group in filteredGroupedLogs" :key="group.no" class="bg-white border-2 border-gray-200 rounded-xl shadow-md overflow-hidden">
+            
+            <div class="bg-gray-800 text-white p-3 flex flex-col gap-1">
+              <div class="flex justify-between items-center">
+                <span class="font-black text-xl text-blue-300">{{ group.no }}</span>
+                <span class="bg-gray-600 px-2 py-1 rounded text-xs">履歴 {{ group.records.length }}件</span>
+              </div>
+              <div class="text-sm font-bold border-t border-gray-600 pt-1 mt-1">
+                🏢 顧客名: {{ group.customer }}
+              </div>
             </div>
-            <div class="p-4 space-y-2 text-sm">
-              <p><span class="font-bold text-gray-500 inline-block w-20">顧客名:</span> <span class="font-bold">{{ log['顧客名'] }}</span></p>
-              <p><span class="font-bold text-gray-500 inline-block w-20">作業内容:</span> {{ log['作業内容'] }}</p>
-              <p><span class="font-bold text-gray-500 inline-block w-20">担当:</span> {{ log['担当'] }}</p>
-              <div class="mt-3 bg-yellow-50 p-3 rounded border border-yellow-200">
-                <p class="font-bold text-yellow-800 mb-1">📝 備考・引き継ぎ:</p>
-                <p class="text-gray-700 whitespace-pre-wrap">{{ log['備考（引継ぎ・進捗状況等）'] || log['備考'] || 'なし' }}</p>
+
+            <div class="p-4 space-y-5 bg-gray-50">
+              <div v-for="(log, idx) in group.records" :key="idx" class="relative pl-4 border-l-4 border-blue-400">
+                
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-gray-600 text-xs font-bold bg-gray-200 px-2 py-0.5 rounded">
+                    📅 {{ log['TS'] || log['タイムスタンプ'] || log['日付'] || '日付不明' }}
+                  </span>
+                  <span class="text-sm font-bold text-blue-800">👤 担当: {{ log['担当'] }}</span>
+                </div>
+                
+                <p class="text-sm mb-2 text-gray-800">
+                  <span class="font-bold text-gray-500 text-xs">作業内容:</span><br>
+                  {{ log['作業内容'] }}
+                </p>
+                
+                <div class="bg-yellow-100 p-3 rounded border border-yellow-300 shadow-sm mt-2">
+                  <p class="font-bold text-yellow-800 mb-1 text-xs">📝 備考・引き継ぎ:</p>
+                  <p class="text-gray-800 whitespace-pre-wrap text-sm">{{ log['備考（引継ぎ・進捗状況等）'] || log['備考'] || 'なし' }}</p>
+                </div>
+
               </div>
             </div>
           </div>
           
-          <div v-if="filteredLogs.length === 0" class="text-center py-10 text-gray-500">
+          <div v-if="filteredGroupedLogs.length === 0" class="text-center py-10 text-gray-500 font-bold bg-white rounded-lg border shadow-sm">
             該当する履歴が見つかりません。
           </div>
         </div>
@@ -80,7 +103,6 @@
 
     createApp({
       setup() {
-        // ★発行済みのAPI URLをセットアップ完了！
         const API_URL = "https://script.google.com/macros/s/AKfycbxVOgnDwBg-VwK6kZSZ8GbYnTykbALW-KPiBLoTO4z0t9O16QWBlFVXlLWL-xCF0dLj/exec";
         
         const allLogs = ref([]);
@@ -94,7 +116,7 @@
             const response = await fetch(API_URL);
             const json = await response.json();
             if(json.status === "success") {
-              // データを最新順にするために反転
+              // 最新の履歴が上に来るように反転
               allLogs.value = json.data.reverse();
             } else {
               error.value = "データの取得に失敗しました: " + json.message;
@@ -106,21 +128,54 @@
           }
         };
 
-        const filteredLogs = computed(() => {
-          if (!searchQuery.value) return allLogs.value;
+        // データを整理Noごとにグループ化する処理
+        const groupedLogs = computed(() => {
+          const groups = {};
+          allLogs.value.forEach(log => {
+            const no = log['整理№'] || log['整理No'] || log['整理No.'] || 'Noなし（空白）';
+            
+            if (!groups[no]) {
+              groups[no] = {
+                no: no,
+                // 顧客名はグループ内の最初のデータ（最新のもの）を採用
+                customer: log['顧客名'] || '顧客名なし', 
+                records: []
+              };
+            }
+            groups[no].records.push(log);
+          });
+          // オブジェクトから配列に変換
+          return Object.values(groups);
+        });
+
+        // 検索機能（グループ全体、またはグループ内の履歴のいずれかに合致するか判定）
+        const filteredGroupedLogs = computed(() => {
+          if (!searchQuery.value) return groupedLogs.value;
           
           const query = searchQuery.value.toLowerCase();
-          return allLogs.value.filter(log => {
-            // ★検索対象のテキストに「TS（日付）」を追加！
-            const targetText = `
-              ${log['TS'] || log['タイムスタンプ'] || log['日付'] || ''} 
-              ${log['整理№'] || log['整理No'] || log['整理No.'] || ''} 
-              ${log['顧客名'] || ''} 
-              ${log['作業内容'] || ''} 
-              ${log['担当'] || ''}
-            `.toLowerCase();
-            return targetText.includes(query);
+          
+          return groupedLogs.value.filter(group => {
+            // 親要素（整理No、顧客名）に合致するか
+            if (group.no.toLowerCase().includes(query) || group.customer.toLowerCase().includes(query)) {
+              return true;
+            }
+            
+            // 子要素（日付、作業内容、担当、備考）のいずれかに合致するか
+            return group.records.some(log => {
+              const targetText = `
+                ${log['TS'] || log['タイムスタンプ'] || log['日付'] || ''} 
+                ${log['作業内容'] || ''} 
+                ${log['担当'] || ''}
+                ${log['備考（引継ぎ・進捗状況等）'] || log['備考'] || ''}
+              `.toLowerCase();
+              return targetText.includes(query);
+            });
           });
+        });
+
+        // 検索結果の総履歴件数を計算
+        const totalRecordsCount = computed(() => {
+          return filteredGroupedLogs.value.reduce((sum, group) => sum + group.records.length, 0);
         });
 
         const showYesterday = () => {
@@ -143,7 +198,8 @@
 
         return {
           searchQuery,
-          filteredLogs,
+          filteredGroupedLogs,
+          totalRecordsCount,
           isLoading,
           error,
           showYesterday,
