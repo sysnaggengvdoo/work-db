@@ -111,8 +111,10 @@
           
           const query = searchQuery.value.toLowerCase();
           return allLogs.value.filter(log => {
+            // ★検索対象のテキストに「TS（日付）」を追加！
             const targetText = `
-              ${log['整理№'] || ''} 
+              ${log['TS'] || log['タイムスタンプ'] || log['日付'] || ''} 
+              ${log['整理№'] || log['整理No'] || log['整理No.'] || ''} 
               ${log['顧客名'] || ''} 
               ${log['作業内容'] || ''} 
               ${log['担当'] || ''}
