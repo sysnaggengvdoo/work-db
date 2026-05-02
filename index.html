@@ -7,13 +7,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
-<body class="bg-gray-100 font-sans">
-  <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-lg pb-20">
+<body class="bg-gray-100 font-sans pb-20">
+  <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
     
-    <header class="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-md">
-      <div class="flex justify-between items-center mb-2">
-        <h1 class="text-xl font-bold">過去ログ検索 v3.3</h1>
-        <a href="https://sysnaggengvdoo.github.io/work-status/" class="text-sm bg-blue-800 px-3 py-1 rounded hover:bg-blue-900 transition">⬅️ 当日作業へ</a>
+    <header class="bg-blue-700 text-white p-4 sticky top-0 z-40 shadow-md">
+      <div class="flex justify-center items-center mb-3">
+        <h1 class="text-xl font-bold tracking-wider">🔍 過去ログ検索 v3.3</h1>
       </div>
       
       <div class="relative">
@@ -36,17 +35,14 @@
     </header>
 
     <main class="p-4">
-      
       <div v-if="isLoading" class="text-center py-10">
         <div class="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
         <p class="text-gray-600 font-bold">過去の作業データを読み込み中...</p>
         <p class="text-xs text-gray-400 mt-2">※初回のみ数秒かかります</p>
       </div>
-
       <div v-else-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
         {{ error }}
       </div>
-
       <div v-else>
         <p class="text-sm text-gray-500 mb-3 text-right">
           該当: <span class="font-bold text-gray-800">{{ filteredGroupedLogs.length }}</span> 案件 
@@ -55,7 +51,6 @@
         
         <div class="space-y-6">
           <div v-for="group in filteredGroupedLogs" :key="group.no" class="bg-white border-2 border-gray-200 rounded-xl shadow-md overflow-hidden">
-            
             <div class="bg-gray-800 text-white p-3 flex flex-col gap-1">
               <div class="flex justify-between items-center">
                 <span class="font-black text-xl text-blue-300">{{ group.no }}</span>
@@ -65,46 +60,49 @@
                 🏢 顧客名: {{ group.customer }}
               </div>
             </div>
-
             <div class="p-4 space-y-5 bg-gray-50">
               <div v-for="(log, idx) in group.records" :key="idx" class="relative pl-4 border-l-4 border-blue-400">
-                
                 <div class="flex justify-between items-center mb-1">
                   <span class="text-gray-600 text-xs font-bold bg-gray-200 px-2 py-0.5 rounded">
                     📅 {{ log['TS'] || log['タイムスタンプ'] || log['日付'] || '日付不明' }}
                   </span>
                   <span class="text-sm font-bold text-blue-800">👤 担当: {{ log['担当'] }}</span>
                 </div>
-                
                 <p class="text-sm mb-2 text-gray-800">
                   <span class="font-bold text-gray-500 text-xs">作業内容:</span><br>
                   {{ log['作業内容'] }}
                 </p>
-                
                 <div class="bg-yellow-100 p-3 rounded border border-yellow-300 shadow-sm mt-2">
                   <p class="font-bold text-yellow-800 mb-1 text-xs">📝 備考・引き継ぎ:</p>
                   <p class="text-gray-800 whitespace-pre-wrap text-sm">{{ log['備考（引継ぎ・進捗状況等）'] || log['備考'] || 'なし' }}</p>
                 </div>
-
               </div>
             </div>
           </div>
-          
           <div v-if="filteredGroupedLogs.length === 0" class="text-center py-10 text-gray-500 font-bold bg-white rounded-lg border shadow-sm">
             該当する履歴が見つかりません。
           </div>
         </div>
       </div>
     </main>
+    
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t-2 border-gray-200 flex justify-around z-50 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+      <a href="https://sysnaggengvdoo.github.io/work-status/" class="flex flex-col items-center justify-center w-1/2 py-2 text-gray-500 hover:text-blue-600 border-t-4 border-transparent hover:bg-gray-50 transition">
+        <span class="text-xl mb-1">📋</span>
+        <span class="text-xs font-bold">今日の作業</span>
+      </a>
+      <a href="#" class="flex flex-col items-center justify-center w-1/2 py-2 text-blue-600 border-t-4 border-blue-600 bg-blue-50">
+        <span class="text-xl mb-1">🔍</span>
+        <span class="text-xs font-bold">過去ログ検索</span>
+      </a>
+    </nav>
   </div>
 
   <script>
     const { createApp, ref, computed, onMounted } = Vue;
-
     createApp({
       setup() {
         const API_URL = "https://script.google.com/macros/s/AKfycbxVOgnDwBg-VwK6kZSZ8GbYnTykbALW-KPiBLoTO4z0t9O16QWBlFVXlLWL-xCF0dLj/exec";
-        
         const allLogs = ref([]);
         const searchQuery = ref("");
         const isLoading = ref(true);
@@ -116,7 +114,6 @@
             const response = await fetch(API_URL);
             const json = await response.json();
             if(json.status === "success") {
-              // 最新の履歴が上に来るように反転
               allLogs.value = json.data.reverse();
             } else {
               error.value = "データの取得に失敗しました: " + json.message;
@@ -128,39 +125,27 @@
           }
         };
 
-        // データを整理Noごとにグループ化する処理
         const groupedLogs = computed(() => {
           const groups = {};
           allLogs.value.forEach(log => {
             const no = log['整理№'] || log['整理No'] || log['整理No.'] || 'Noなし（空白）';
-            
             if (!groups[no]) {
               groups[no] = {
                 no: no,
-                // 顧客名はグループ内の最初のデータ（最新のもの）を採用
                 customer: log['顧客名'] || '顧客名なし', 
                 records: []
               };
             }
             groups[no].records.push(log);
           });
-          // オブジェクトから配列に変換
           return Object.values(groups);
         });
 
-        // 検索機能（グループ全体、またはグループ内の履歴のいずれかに合致するか判定）
         const filteredGroupedLogs = computed(() => {
           if (!searchQuery.value) return groupedLogs.value;
-          
           const query = searchQuery.value.toLowerCase();
-          
           return groupedLogs.value.filter(group => {
-            // 親要素（整理No、顧客名）に合致するか
-            if (group.no.toLowerCase().includes(query) || group.customer.toLowerCase().includes(query)) {
-              return true;
-            }
-            
-            // 子要素（日付、作業内容、担当、備考）のいずれかに合致するか
+            if (group.no.toLowerCase().includes(query) || group.customer.toLowerCase().includes(query)) return true;
             return group.records.some(log => {
               const targetText = `
                 ${log['TS'] || log['タイムスタンプ'] || log['日付'] || ''} 
@@ -173,7 +158,6 @@
           });
         });
 
-        // 検索結果の総履歴件数を計算
         const totalRecordsCount = computed(() => {
           return filteredGroupedLogs.value.reduce((sum, group) => sum + group.records.length, 0);
         });
@@ -181,7 +165,6 @@
         const showYesterday = () => {
           const d = new Date();
           d.setDate(d.getDate() - 1);
-          // YYYY/MM/DDの形式で検索窓に入力する疑似アクション
           const yyyy = d.getFullYear();
           const mm = String(d.getMonth() + 1).padStart(2, '0');
           const dd = String(d.getDate()).padStart(2, '0');
@@ -192,19 +175,9 @@
           searchQuery.value = "";
         };
 
-        onMounted(() => {
-          fetchAllData();
-        });
+        onMounted(() => fetchAllData());
 
-        return {
-          searchQuery,
-          filteredGroupedLogs,
-          totalRecordsCount,
-          isLoading,
-          error,
-          showYesterday,
-          clearSearch
-        };
+        return { searchQuery, filteredGroupedLogs, totalRecordsCount, isLoading, error, showYesterday, clearSearch };
       }
     }).mount('#app');
   </script>
