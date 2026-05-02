@@ -3,20 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="過去ログ">
   <title>過去ログ検索</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
-<body class="bg-gray-100 font-sans pb-12">
-  <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
+<body class="bg-gray-100 font-sans pb-12" style="overscroll-behavior-y: none;">
+  <div id="app" class="w-full mx-auto bg-white min-h-screen shadow-lg">
     
-    <!-- 固定ヘッダー -->
     <header class="bg-blue-700 text-white p-4 sticky top-0 z-40 shadow-md">
       <div class="flex justify-center items-center mb-3">
         <h1 class="text-xl font-bold tracking-wider">過去ログ検索</h1>
       </div>
       
-      <!-- 検索バー -->
       <div class="relative">
         <input 
           type="text" 
@@ -26,10 +27,7 @@
         >
       </div>
       
-      <!-- クイックボタン -->
-      <!-- ★mt-3 → mt-1（検索バー下の余白をカット） -->
       <div class="mt-1 flex gap-2">
-        <!-- ★button内の py-2 → py-1.5（ボタンの高さを少し詰める） -->
         <button @click="showYesterday" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-1.5 rounded text-sm font-bold shadow transition">
           前日の履歴を表示
         </button>
@@ -39,7 +37,6 @@
       </div>
     </header>
 
-    <!-- メインコンテンツ -->
     <main class="p-4">
       <div v-if="isLoading" class="text-center py-10">
         <div class="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -54,7 +51,6 @@
         </p>
         
         <div class="space-y-6">
-          <!-- グループ化されたカードUI -->
           <div v-for="group in filteredGroupedLogs" :key="group.no" class="bg-white border-2 border-gray-200 rounded-xl shadow-md overflow-hidden">
             <div class="bg-gray-800 text-white p-3 flex flex-col gap-1">
               <div class="flex justify-between items-center">
@@ -68,7 +64,6 @@
             <div class="p-4 space-y-5 bg-gray-50">
               <div v-for="(log, idx) in group.records" :key="idx" class="relative pl-4 border-l-4 border-blue-400">
                 <div class="flex justify-between items-center mb-1">
-                  <!-- ★修正ポイント：formatDate関数を通して日付のみ表示 -->
                   <span class="text-gray-600 text-xs font-bold bg-gray-200 px-2 py-0.5 rounded">
                     {{ formatDate(log['TS'] || log['タイムスタンプ'] || log['日付']) }}
                   </span>
@@ -92,9 +87,7 @@
       </div>
     </main>
     
-    <!-- 🌟超スリムナビ -->
-    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t-2 border-gray-300 flex justify-around z-50 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
-      <!-- ★aタグ内の py-4 → py-2（高さを圧縮、指一本分の高さに） -->
+    <nav class="fixed bottom-0 left-0 right-0 w-full mx-auto bg-white border-t-2 border-gray-300 flex justify-around z-50 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
       <a href="https://sysnaggengvdoo.github.io/work-status/" class="flex items-center justify-center w-1/2 py-2 text-gray-500 border-r border-gray-200 font-bold text-lg hover:bg-gray-50 transition">
         今日の作業
       </a>
@@ -114,7 +107,6 @@
         const isLoading = ref(true);
         const error = ref(null);
 
-        // ★日付表示用ヘルパー関数：スペースで分割して日付部分だけ返す
         const formatDate = (val) => {
           if (!val) return '日付不明';
           return String(val).split(' ')[0];
@@ -165,7 +157,8 @@
         const totalRecordsCount = computed(() => filteredGroupedLogs.value.reduce((sum, group) => sum + group.records.length, 0));
 
         const showYesterday = () => {
-          const d = new Date(); d.setDate(d.getDate() - 1);
+          const d = new Date();
+          d.setDate(d.getDate() - 1);
           searchQuery.value = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
         };
 
@@ -180,7 +173,7 @@
           error, 
           showYesterday, 
           clearSearch,
-          formatDate // 関数を公開
+          formatDate 
         };
       }
     }).mount('#app');
